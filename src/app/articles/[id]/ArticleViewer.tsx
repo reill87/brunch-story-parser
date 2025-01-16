@@ -9,17 +9,36 @@ interface ArticleViewerProps {
   initialArticle: BrunchArticle;
 }
 
+const FONT_SIZES = {
+  small: 'text-base',
+  medium: 'text-lg',
+  large: 'text-xl',
+  xlarge: 'text-2xl'
+};
+
+type FontSizeKey = keyof typeof FONT_SIZES;
+
 export default function ArticleViewer({ initialArticle }: ArticleViewerProps) {
   const [pages, setPages] = useState<Array<{ content: string; pageNumber: number }>>([]);
   const [currentPage, setCurrentPage] = useState(1);
+  const [fontSize, setFontSize] = useState<FontSizeKey>('medium');
 
-  useEffect(() => {
+  // 페이지 분할 함수
+  const calculatePages = () => {
     if (typeof window !== 'undefined') {
-      const splitPages = splitContentIntoPages(initialArticle.content);
+      const splitPages = splitContentIntoPages(initialArticle.content, fontSize);
       setPages(splitPages);
+      // 페이지를 다시 계산할 때 현재 페이지가 전체 페이지 수를 넘지 않도록 조정
+      setCurrentPage(curr => Math.min(curr, splitPages.length));
     }
-  }, [initialArticle.content]);
+  };
 
+  // 초기 페이지 계산 및 폰트 크기 변경 시 재계산
+  useEffect(() => {
+    calculatePages();
+  }, [initialArticle.content, fontSize]);
+
+  // 키보드 네비게이션
   useEffect(() => {
     function handleKeyPress(e: KeyboardEvent) {
       if (e.key === 'ArrowLeft') {
@@ -36,16 +55,32 @@ export default function ArticleViewer({ initialArticle }: ArticleViewerProps) {
   return (
     <div className="min-h-screen p-8">
       <div className="max-w-4xl mx-auto">
-        <Link 
-          href="/"
-          className="inline-block mb-8 text-blue-500 hover:text-blue-600"
-        >
-          ← 목록으로 돌아가기
-        </Link>
+        <div className="flex justify-between items-center mb-8">
+          <Link 
+            href="/"
+            className="inline-block text-blue-500 hover:text-blue-600"
+          >
+            ← 목록으로 돌아가기
+          </Link>
+          
+          <div className="flex items-center gap-4">
+            <span className="text-gray-600">글자 크기:</span>
+            <select
+              value={fontSize}
+              onChange={(e) => setFontSize(e.target.value as FontSizeKey)}
+              className="p-2 border rounded"
+            >
+              <option value="small">작게</option>
+              <option value="medium">보통</option>
+              <option value="large">크게</option>
+              <option value="xlarge">아주 크게</option>
+            </select>
+          </div>
+        </div>
         
         <article className="bg-white shadow-lg rounded-lg p-8">
           <header className="mb-8">
-            <h1 className="text-4xl font-bold mb-4">{initialArticle.title}</h1>
+            <h1 className={`${FONT_SIZES[fontSize]} font-bold mb-4`}>{initialArticle.title}</h1>
             <div className="text-gray-600">
               <div>원본 URL: <a href={initialArticle.url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-600">{initialArticle.url}</a></div>
               <div>작성일: {new Date(initialArticle.created_at).toLocaleDateString()}</div>
@@ -55,7 +90,7 @@ export default function ArticleViewer({ initialArticle }: ArticleViewerProps) {
 
           <div className="relative min-h-[800px] mb-16">
             <div 
-              className="prose prose-lg max-w-none overflow-y-auto"
+              className={`prose max-w-none overflow-y-auto ${FONT_SIZES[fontSize]}`}
               style={{ maxHeight: '700px' }}
               dangerouslySetInnerHTML={{ 
                 __html: pages[currentPage - 1]?.content || initialArticle.content 
