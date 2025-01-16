@@ -23,7 +23,12 @@ export default function AdminPage() {
 
       if (response.ok) {
         const result = await response.json();
-        setMessage(`성공적으로 파싱되었습니다!\n제목: ${result.parsedContent.title}\n미리보기: ${result.parsedContent.contentPreview}`);
+        const operationText = result.operation === 'updated' ? '업데이트' : '생성';
+        setMessage(
+          `성공적으로 ${operationText}되었습니다!\n` +
+          `제목: ${result.parsedContent.title}\n` +
+          `미리보기: ${result.parsedContent.contentPreview}`
+        );
         setUrl('');
       }
     } catch (error) {

@@ -11,6 +11,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: '유효한 브런치 URL이 아닙니다.' }, { status: 400 });
     }
 
+    // 먼저 동일한 URL의 데이터가 있는지 확인
+    const { data: existingArticle } = await supabase
+      .from('articles')
+      .select()
+      .eq('url', url)
+      .single();
+
     const response = await axios.get(url);
     const $ = cheerio.load(response.data);
 
@@ -26,15 +33,12 @@ export async function POST(request: Request) {
     $('.wrap_body article').find('p, h1, h2, h3, h4, blockquote, figure').each((_, element) => {
       const $element = $(element);
       
-      // 이미지 처리
       if ($element.find('img').length > 0) {
         const imgSrc = $element.find('img').attr('src');
         if (imgSrc) {
           content += `<figure><img src="${imgSrc}" alt="article image" /></figure>`;
         }
-      } 
-      // 텍스트 컨텐츠 처리
-      else {
+      } else {
         const text = $element.html()?.trim();
         if (text && text.length > 0) {
           content += `<${element.tagName}>${text}</${element.tagName}>`;
@@ -42,48 +46,69 @@ export async function POST(request: Request) {
       }
     });
 
-    // 컨텐츠가 비어있는 경우 대체 선택자 시도
     if (!content) {
       content = $('.article_view').html() || 
                 $('.wrap_body').html() || 
                 '';
     }
 
-    // HTML 정리
     content = content
-      .replace(/\n\s+/g, '\n') // 불필요한 공백 제거
-      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '') // 스크립트 제거
-      .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '') // 스타일 제거
+      .replace(/\n\s+/g, '\n')
+      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+      .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '')
       .trim();
 
     if (!title || !content) {
       throw new Error('컨텐츠를 파싱할 수 없습니다.');
     }
 
-    // Supabase에 데이터 저장
-    const { data, error } = await supabase
-      .from('articles')
-      .insert([
-        {
+    let result;
+    let operation;
+
+    if (existingArticle) {
+      // 기존 데이터가 있으면 업데이트
+      const { data, error } = await supabase
+        .from('articles')
+        .update({
           title,
           content,
-          url,
-          created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
-        }
-      ])
-      .select();
+        })
+        .eq('url', url)
+        .select();
 
-    if (error) {
-      throw error;
+      result = data;
+      operation = 'updated';
+      
+      if (error) throw error;
+    } else {
+      // 새로운 데이터 삽입
+      const { data, error } = await supabase
+        .from('articles')
+        .insert([
+          {
+            title,
+            content,
+            url,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          }
+        ])
+        .select();
+
+      result = data;
+      operation = 'created';
+      
+      if (error) throw error;
     }
 
     return NextResponse.json({ 
       success: true, 
-      data,
+      data: result,
+      operation,
       parsedContent: {
         title,
-        contentPreview: content.substring(0, 200) + '...' // 미리보기용
+        contentPreview: content.substring(0, 200) + '...'
       }
     });
   } catch (error) {
