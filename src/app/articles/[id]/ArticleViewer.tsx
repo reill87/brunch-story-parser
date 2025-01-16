@@ -54,7 +54,7 @@ export default function ArticleViewer({ initialArticle }: ArticleViewerProps) {
 
   return (
     <div className="min-h-screen p-8">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-4xl mx-auto relative">
         <div className="flex justify-between items-center mb-8">
           <Link 
             href="/"
@@ -78,6 +78,28 @@ export default function ArticleViewer({ initialArticle }: ArticleViewerProps) {
           </div>
         </div>
         
+        <button
+          onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+          disabled={currentPage === 1}
+          className="fixed left-4 top-1/2 transform -translate-y-1/2 px-4 py-8 bg-white/80 hover:bg-white text-blue-500 rounded-lg shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+          aria-label="이전 페이지"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+
+        <button
+          onClick={() => setCurrentPage(p => Math.min(pages.length, p + 1))}
+          disabled={currentPage === pages.length}
+          className="fixed right-4 top-1/2 transform -translate-y-1/2 px-4 py-8 bg-white/80 hover:bg-white text-blue-500 rounded-lg shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+          aria-label="다음 페이지"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+        
         <article className="bg-white shadow-lg rounded-lg p-8">
           <header className="mb-8">
             <h1 className={`${FONT_SIZES[fontSize]} font-bold mb-4`}>{initialArticle.title}</h1>
@@ -88,7 +110,7 @@ export default function ArticleViewer({ initialArticle }: ArticleViewerProps) {
             </div>
           </header>
 
-          <div className="relative min-h-[800px] mb-16">
+          <div className="relative min-h-[800px]">
             <div 
               className={`prose max-w-none overflow-y-auto ${FONT_SIZES[fontSize]}`}
               style={{ maxHeight: '700px' }}
@@ -97,26 +119,10 @@ export default function ArticleViewer({ initialArticle }: ArticleViewerProps) {
               }}
             />
             
-            <div className="absolute bottom-0 left-0 right-0 flex justify-between items-center py-4 bg-white border-t">
-              <button
-                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-                className="px-4 py-2 bg-blue-500 text-white rounded disabled:bg-gray-300"
-              >
-                이전 페이지
-              </button>
-              
+            <div className="absolute bottom-0 left-0 right-0 flex justify-center py-4 bg-white border-t">
               <div className="text-gray-600">
                 {currentPage} / {pages.length} 페이지
               </div>
-              
-              <button
-                onClick={() => setCurrentPage(p => Math.min(pages.length, p + 1))}
-                disabled={currentPage === pages.length}
-                className="px-4 py-2 bg-blue-500 text-white rounded disabled:bg-gray-300"
-              >
-                다음 페이지
-              </button>
             </div>
           </div>
         </article>
