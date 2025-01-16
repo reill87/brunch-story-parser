@@ -22,6 +22,7 @@ export default function ArticleViewer({ initialArticle }: ArticleViewerProps) {
   const [pages, setPages] = useState<Array<{ content: string; pageNumber: number }>>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [fontSize, setFontSize] = useState<FontSizeKey>('medium');
+  const [contentHeight, setContentHeight] = useState('700px');
 
   // 페이지 분할 함수
   const calculatePages = () => {
@@ -52,6 +53,21 @@ export default function ArticleViewer({ initialArticle }: ArticleViewerProps) {
     return () => window.removeEventListener('keydown', handleKeyPress);
   }, [pages.length]);
 
+  useEffect(() => {
+    function updateContentHeight() {
+      // 헤더와 페이지 표시기의 높이를 제외한 나머지 공간 계산
+      const headerHeight = 200; // 대략적인 헤더 높이
+      const paginationHeight = 50; // 페이지 표시기 높이
+      const padding = 64; // p-8의 padding 값 (8 * 8px)
+      const availableHeight = window.innerHeight - headerHeight - paginationHeight - padding;
+      setContentHeight(`${Math.max(400, availableHeight)}px`);
+    }
+
+    updateContentHeight();
+    window.addEventListener('resize', updateContentHeight);
+    return () => window.removeEventListener('resize', updateContentHeight);
+  }, []);
+
   return (
     <div className="min-h-screen p-8">
       <div className="max-w-4xl mx-auto relative">
@@ -78,28 +94,6 @@ export default function ArticleViewer({ initialArticle }: ArticleViewerProps) {
           </div>
         </div>
         
-        <button
-          onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-          disabled={currentPage === 1}
-          className="fixed left-4 top-1/2 transform -translate-y-1/2 px-4 py-8 bg-white/80 hover:bg-white text-blue-500 rounded-lg shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-          aria-label="이전 페이지"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-        </button>
-
-        <button
-          onClick={() => setCurrentPage(p => Math.min(pages.length, p + 1))}
-          disabled={currentPage === pages.length}
-          className="fixed right-4 top-1/2 transform -translate-y-1/2 px-4 py-8 bg-white/80 hover:bg-white text-blue-500 rounded-lg shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-          aria-label="다음 페이지"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-          </svg>
-        </button>
-        
         <article className="bg-white shadow-lg rounded-lg p-8">
           <header className="mb-8">
             <h1 className={`${FONT_SIZES[fontSize]} font-bold mb-4`}>{initialArticle.title}</h1>
@@ -110,22 +104,82 @@ export default function ArticleViewer({ initialArticle }: ArticleViewerProps) {
             </div>
           </header>
 
-          <div className="relative min-h-[800px]">
+          <div className="relative" style={{ minHeight: contentHeight }}>
             <div 
-              className={`prose max-w-none overflow-y-auto ${FONT_SIZES[fontSize]}`}
-              style={{ maxHeight: '700px' }}
-              dangerouslySetInnerHTML={{ 
-                __html: pages[currentPage - 1]?.content || initialArticle.content 
-              }}
-            />
+              className={`prose max-w-none ${FONT_SIZES[fontSize]}`}
+              style={{ height: contentHeight }}
+            >
+              <div
+                className="h-full"
+                dangerouslySetInnerHTML={{ 
+                  __html: pages[currentPage - 1]?.content || initialArticle.content 
+                }}
+              />
+            </div>
             
-            <div className="absolute bottom-0 left-0 right-0 flex justify-center py-4 bg-white border-t">
+            <div className="absolute bottom-0 left-0 right-0 hidden sm:flex justify-center py-4 bg-white border-t">
               <div className="text-gray-600">
                 {currentPage} / {pages.length} 페이지
               </div>
             </div>
           </div>
         </article>
+
+        <div className="fixed bottom-4 left-0 right-0 sm:hidden">
+          <div className="flex justify-center mb-2">
+            <div className="bg-white/90 px-4 py-2 rounded-full shadow-lg text-gray-600">
+              {currentPage} / {pages.length} 페이지
+            </div>
+          </div>
+          
+          <div className="flex justify-between px-4">
+            <button
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="p-3 bg-white/90 text-blue-500 rounded-full shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              aria-label="이전 페이지"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+
+            <button
+              onClick={() => setCurrentPage(p => Math.min(pages.length, p + 1))}
+              disabled={currentPage === pages.length}
+              className="p-3 bg-white/90 text-blue-500 rounded-full shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              aria-label="다음 페이지"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div className="hidden sm:block">
+          <button
+            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+            disabled={currentPage === 1}
+            className="fixed left-4 top-1/2 transform -translate-y-1/2 px-4 py-8 bg-white/80 hover:bg-white text-blue-500 rounded-lg shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            aria-label="이전 페이지"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+
+          <button
+            onClick={() => setCurrentPage(p => Math.min(pages.length, p + 1))}
+            disabled={currentPage === pages.length}
+            className="fixed right-4 top-1/2 transform -translate-y-1/2 px-4 py-8 bg-white/80 hover:bg-white text-blue-500 rounded-lg shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            aria-label="다음 페이지"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
       </div>
     </div>
   );
