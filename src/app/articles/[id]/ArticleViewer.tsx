@@ -53,10 +53,13 @@ export default function ArticleViewer({ initialArticle }: ArticleViewerProps) {
             </div>
           </header>
 
-          <div className="relative min-h-[800px]">
+          <div className="relative min-h-[800px] mb-16">
             <div 
-              className="prose prose-lg max-w-none"
-              dangerouslySetInnerHTML={{ __html: pages[currentPage - 1]?.content || '' }}
+              className="prose prose-lg max-w-none overflow-y-auto"
+              style={{ maxHeight: '700px' }}
+              dangerouslySetInnerHTML={{ 
+                __html: pages[currentPage - 1]?.content || initialArticle.content 
+              }}
             />
             
             <div className="absolute bottom-0 left-0 right-0 flex justify-between items-center py-4 bg-white border-t">

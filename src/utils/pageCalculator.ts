@@ -4,7 +4,8 @@ interface PageSection {
 }
 
 export function splitContentIntoPages(htmlContent: string): PageSection[] {
-  // HTML 문자열을 DOM으로 파싱
+  if (typeof window === 'undefined') return [];
+
   const parser = new DOMParser();
   const doc = parser.parseFromString(htmlContent, 'text/html');
   const elements = Array.from(doc.body.children);
@@ -12,13 +13,14 @@ export function splitContentIntoPages(htmlContent: string): PageSection[] {
   const pages: PageSection[] = [];
   let currentPage: string[] = [];
   let currentHeight = 0;
-  const TARGET_HEIGHT = 800; // 예상 페이지 높이 (픽셀)
+  const TARGET_HEIGHT = 700; // 여유 공간을 위해 높이를 약간 줄임
   
-  elements.forEach((element) => {
+  elements.forEach((element, index) => {
     const elementHeight = getEstimatedHeight(element);
+    const isLastElement = index === elements.length - 1;
     
+    // 현재 요소를 추가했을 때 페이지 높이를 초과하는 경우
     if (currentHeight + elementHeight > TARGET_HEIGHT && currentPage.length > 0) {
-      // 현재 페이지가 목표 높이를 초과하면 새 페이지 시작
       pages.push({
         content: currentPage.join(''),
         pageNumber: pages.length + 1
@@ -29,9 +31,19 @@ export function splitContentIntoPages(htmlContent: string): PageSection[] {
     
     currentPage.push(element.outerHTML);
     currentHeight += elementHeight;
+    
+    // 마지막 요소이거나 현재 높이가 목표 높이에 가까워진 경우
+    if (isLastElement || currentHeight >= TARGET_HEIGHT * 0.8) {
+      pages.push({
+        content: currentPage.join(''),
+        pageNumber: pages.length + 1
+      });
+      currentPage = [];
+      currentHeight = 0;
+    }
   });
-  
-  // 마지막 페이지 추가
+
+  // 남은 컨텐츠가 있다면 마지막 페이지로 추가
   if (currentPage.length > 0) {
     pages.push({
       content: currentPage.join(''),
@@ -43,19 +55,21 @@ export function splitContentIntoPages(htmlContent: string): PageSection[] {
 }
 
 function getEstimatedHeight(element: Element): number {
-  // 요소 타입별 예상 높이 계산
   const tag = element.tagName.toLowerCase();
   const text = element.textContent || '';
   const wordCount = text.split(/\s+/).length;
   
+  // 한글 텍스트를 고려한 높이 계산 조정
   const heightEstimates: Record<string, number> = {
-    h1: 60,
-    h2: 50,
-    h3: 40,
-    p: Math.ceil(wordCount / 10) * 24, // 한 줄당 약 10단어, 줄 높이 24px
-    figure: 300, // 이미지 요소 예상 높이
-    blockquote: Math.ceil(wordCount / 8) * 28,
+    h1: 80,  // 제목 높이 증가
+    h2: 60,
+    h3: 50,
+    p: Math.ceil(wordCount / 8) * 28,  // 한글 텍스트는 더 많은 공간 필요
+    figure: 400,  // 이미지 영역 확대
+    blockquote: Math.ceil(wordCount / 6) * 32,
+    div: Math.ceil(wordCount / 8) * 28,
   };
   
-  return heightEstimates[tag] || 30;
+  // 기본값 조정
+  return heightEstimates[tag] || Math.ceil(wordCount / 8) * 28;
 } 
