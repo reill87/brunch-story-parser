@@ -3,6 +3,6 @@ export interface BrunchArticle {
   title: string;
   content: string;
   url: string;
-  createdAt: Date;
-  updatedAt: Date;
+  created_at: string;
+  updated_at: string;
 } 
