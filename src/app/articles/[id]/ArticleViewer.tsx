@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
+import { useSwipeable } from 'react-swipeable';
 import { splitContentIntoPages } from '@/utils/pageCalculator';
 import { BrunchArticle } from '@/types';
 
@@ -71,6 +72,20 @@ export default function ArticleViewer({ initialArticle }: ArticleViewerProps) {
     return () => window.removeEventListener('resize', updateContentHeight);
   }, []);
 
+  // 페이지 전환 함수
+  const goToPrevPage = () => setCurrentPage(p => Math.max(1, p - 1));
+  const goToNextPage = () => setCurrentPage(p => Math.min(pages.length, p + 1));
+
+  // 스와이프 핸들러 설정
+  const swipeHandlers = useSwipeable({
+    onSwipedLeft: () => goToNextPage(),
+    onSwipedRight: () => goToPrevPage(),
+    trackMouse: false,
+    preventScrollOnSwipe: true,
+    delta: 50, // 스와이프로 인식할 최소 거리
+    swipeDuration: 500, // 스와이프 지속 시간
+  });
+
   return (
     <div className="min-h-screen sm:p-8">
       <div className="w-full sm:max-w-4xl sm:mx-auto relative">
@@ -107,20 +122,41 @@ export default function ArticleViewer({ initialArticle }: ArticleViewerProps) {
             </div>
           </header>
 
-          <div className="relative pb-20 sm:pb-16">
-            <div 
-              className={`prose max-w-none ${FONT_SIZES[fontSize]}`}
-            >
-              <div
-                dangerouslySetInnerHTML={{ 
-                  __html: pages[currentPage - 1]?.content || initialArticle.content 
-                }}
-              />
-            </div>
-            
-            <div className="absolute bottom-0 left-0 right-0 hidden sm:flex justify-center py-4 bg-white border-t">
-              <div className="text-gray-600">
-                {currentPage} / {pages.length} 페이지
+          {/* 스와이프 영역 설정 */}
+          <div {...swipeHandlers} className="touch-pan-y">
+            <div className="relative pb-20 sm:pb-16">
+              <div 
+                className={`prose max-w-none ${FONT_SIZES[fontSize]}`}
+              >
+                <div
+                  dangerouslySetInnerHTML={{ 
+                    __html: pages[currentPage - 1]?.content || initialArticle.content 
+                  }}
+                />
+              </div>
+              
+              {/* 스와이프 힌트 표시 (첫 방문 시에만 표시) */}
+              <div className="absolute top-1/2 left-0 right-0 flex justify-between px-4 pointer-events-none sm:hidden">
+                {currentPage > 1 && (
+                  <div className="text-gray-400 animate-pulse">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                  </div>
+                )}
+                {currentPage < pages.length && (
+                  <div className="text-gray-400 animate-pulse ml-auto">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </div>
+                )}
+              </div>
+              
+              <div className="absolute bottom-0 left-0 right-0 hidden sm:flex justify-center py-4 bg-white border-t">
+                <div className="text-gray-600">
+                  {currentPage} / {pages.length} 페이지
+                </div>
               </div>
             </div>
           </div>
