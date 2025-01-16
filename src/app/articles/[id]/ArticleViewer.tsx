@@ -55,11 +55,14 @@ export default function ArticleViewer({ initialArticle }: ArticleViewerProps) {
 
   useEffect(() => {
     function updateContentHeight() {
-      // 헤더와 페이지 표시기의 높이를 제외한 나머지 공간 계산
-      const headerHeight = 200; // 대략적인 헤더 높이
-      const paginationHeight = 50; // 페이지 표시기 높이
-      const padding = 64; // p-8의 padding 값 (8 * 8px)
-      const availableHeight = window.innerHeight - headerHeight - paginationHeight - padding;
+      // 모바일과 데스크톱의 여백 차이를 고려한 계산
+      const isMobile = window.innerWidth < 640; // sm 브레이크포인트
+      const headerHeight = 200; // 헤더 높이
+      const paginationHeight = isMobile ? 120 : 50; // 모바일에서는 하단 네비게이션이 더 큼
+      const padding = isMobile ? 32 : 64; // 모바일과 데스크톱의 패딩 차이
+      const safeArea = isMobile ? 40 : 0; // 모바일 안전 여백
+
+      const availableHeight = window.innerHeight - headerHeight - paginationHeight - padding - safeArea;
       setContentHeight(`${Math.max(400, availableHeight)}px`);
     }
 
@@ -69,9 +72,9 @@ export default function ArticleViewer({ initialArticle }: ArticleViewerProps) {
   }, []);
 
   return (
-    <div className="min-h-screen p-8">
-      <div className="max-w-4xl mx-auto relative">
-        <div className="flex justify-between items-center mb-8">
+    <div className="min-h-screen sm:p-8">
+      <div className="w-full sm:max-w-4xl sm:mx-auto relative">
+        <div className="flex justify-between items-center mb-8 p-4 sm:p-0">
           <Link 
             href="/"
             className="inline-block text-blue-500 hover:text-blue-600"
@@ -94,7 +97,7 @@ export default function ArticleViewer({ initialArticle }: ArticleViewerProps) {
           </div>
         </div>
         
-        <article className="bg-white shadow-lg rounded-lg p-8">
+        <article className="bg-white shadow-lg sm:rounded-lg p-4 sm:p-8 min-h-screen sm:min-h-0">
           <header className="mb-8">
             <h1 className={`${FONT_SIZES[fontSize]} font-bold mb-4`}>{initialArticle.title}</h1>
             <div className="text-gray-600">
@@ -104,13 +107,11 @@ export default function ArticleViewer({ initialArticle }: ArticleViewerProps) {
             </div>
           </header>
 
-          <div className="relative" style={{ minHeight: contentHeight }}>
+          <div className="relative pb-20 sm:pb-16">
             <div 
               className={`prose max-w-none ${FONT_SIZES[fontSize]}`}
-              style={{ height: contentHeight }}
             >
               <div
-                className="h-full"
                 dangerouslySetInnerHTML={{ 
                   __html: pages[currentPage - 1]?.content || initialArticle.content 
                 }}
@@ -125,7 +126,7 @@ export default function ArticleViewer({ initialArticle }: ArticleViewerProps) {
           </div>
         </article>
 
-        <div className="fixed bottom-4 left-0 right-0 sm:hidden">
+        <div className="fixed bottom-4 left-0 right-0 sm:hidden z-10">
           <div className="flex justify-center mb-2">
             <div className="bg-white/90 px-4 py-2 rounded-full shadow-lg text-gray-600">
               {currentPage} / {pages.length} 페이지
