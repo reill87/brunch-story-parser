@@ -21,14 +21,11 @@ export default function AdminPage() {
         body: JSON.stringify({ url }),
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error);
+      if (response.ok) {
+        const result = await response.json();
+        setMessage(`성공적으로 파싱되었습니다!\n제목: ${result.parsedContent.title}\n미리보기: ${result.parsedContent.contentPreview}`);
+        setUrl('');
       }
-
-      setMessage('성공적으로 파싱되었습니다!');
-      setUrl('');
     } catch (error) {
       setMessage(error instanceof Error ? error.message : '파싱 중 오류가 발생했습니다.');
     } finally {
