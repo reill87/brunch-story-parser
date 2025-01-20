@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import ArticleViewer from './ArticleViewer';
 
+export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 async function getArticle(id: string) {
