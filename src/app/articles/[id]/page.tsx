@@ -1,7 +1,5 @@
 import { supabase } from '@/lib/supabase';
 import ArticleViewer from './ArticleViewer';
-import { PageProps } from '../../../../.next/types/app/articles/[id]/page';
-import { use } from 'react';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
